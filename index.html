@@ -63,13 +63,28 @@
     const gid = '0';
     const url = `https://docs.google.com/spreadsheets/d/${sheetID}/gviz/tq?tqx=out:json&gid=${gid}`;
 
+    // fungsi format tanggal
+    function formatTanggalExcel(value) {
+      if (typeof value === "number") {
+        const excelEpoch = new Date(1899, 11, 30);
+        const date = new Date(excelEpoch.getTime() + value * 86400000);
+        return new Intl.DateTimeFormat("id-ID", {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+          year: "numeric"
+        }).format(date);
+      }
+      return value;
+    }
+
     async function loadTable() {
       try {
         const res = await fetch(url);
         const text = await res.text();
         const json = JSON.parse(text.substr(47).slice(0, -2));
 
-        const headers = json.table.cols.map(c => c.label);
+        const headers = json.table.cols.map(c => c.label).filter(h => h !== "");
         const rows = json.table.rows;
 
         const thead = document.querySelector('#tabelPeminjaman thead');
@@ -89,10 +104,19 @@
         // data rows
         rows.forEach(r => {
           const tr = document.createElement('tr');
-          r.c.forEach(c => {
-            const td = document.createElement('td');
-            td.textContent = c ? c.v : '';
-            tr.appendChild(td);
+          r.c.forEach((c, i) => {
+            if (i < headers.length) { // skip kolom kosong
+              const td = document.createElement('td');
+              let value = c ? c.v : '';
+
+              // cek apakah value adalah tanggal excel (serial number)
+              if (typeof value === "number" && value > 30000 && value < 60000) {
+                value = formatTanggalExcel(value);
+              }
+
+              td.textContent = value;
+              tr.appendChild(td);
+            }
           });
           tbody.appendChild(tr);
         });
@@ -102,7 +126,7 @@
     }
 
     loadTable();
-    setInterval(loadTable, 300000); // 5 menit
+    setInterval(loadTable, 300000); // refresh 5 menit
   </script>
 </body>
 </html>
