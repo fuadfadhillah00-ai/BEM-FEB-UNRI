@@ -31,10 +31,8 @@
       font-weight: 600;
       padding: 12px;
       text-align: center;
-      position: sticky;
-      top: 0;
-      z-index: 2;
       border: none;
+      /* Sticky dihapus agar header ikut scroll */
     }
     tbody td {
       border: 1px solid white;
@@ -47,6 +45,14 @@
     tbody tr:hover td {
       background-color: rgba(255, 255, 255, 0.15);
       transition: background 0.3s;
+    }
+
+    /* Media Query untuk mobile */
+    @media (max-width: 768px) {
+      table, thead th, tbody td {
+        font-size: 12px; /* font lebih kecil di mobile */
+        padding: 8px;
+      }
     }
   </style>
 </head>
@@ -64,11 +70,10 @@
     const url = `https://docs.google.com/spreadsheets/d/${sheetID}/gviz/tq?tqx=out:json&gid=${gid}`;
 
     function formatTanggalGoogleSheets(val) {
-      // Cek apakah value berbentuk "Date(YYYY,MM,DD)"
       const match = /^Date\((\d+),(\d+),(\d+)\)/.exec(val);
       if (match) {
         const year = parseInt(match[1]);
-        const month = parseInt(match[2]); // 0-based
+        const month = parseInt(match[2]);
         const day = parseInt(match[3]);
         const d = new Date(year, month, day);
         return d.toLocaleDateString("id-ID", {
