@@ -63,18 +63,21 @@
     const gid = '0';
     const url = `https://docs.google.com/spreadsheets/d/${sheetID}/gviz/tq?tqx=out:json&gid=${gid}`;
 
-    function formatTanggal(val) {
-      try {
-        const d = new Date(val);
-        if (!isNaN(d)) {
-          return d.toLocaleDateString("id-ID", {
-            weekday: "long",
-            day: "numeric",
-            month: "long",
-            year: "numeric"
-          });
-        }
-      } catch {}
+    function formatTanggalGoogleSheets(val) {
+      // Cek apakah value berbentuk "Date(YYYY,MM,DD)"
+      const match = /^Date\((\d+),(\d+),(\d+)\)/.exec(val);
+      if (match) {
+        const year = parseInt(match[1]);
+        const month = parseInt(match[2]); // 0-based
+        const day = parseInt(match[3]);
+        const d = new Date(year, month, day);
+        return d.toLocaleDateString("id-ID", {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+          year: "numeric"
+        });
+      }
       return val;
     }
 
@@ -84,7 +87,6 @@
         const text = await res.text();
         const json = JSON.parse(text.substr(47).slice(0, -2));
 
-        // filter hanya kolom yang punya label (biar tidak muncul kosong)
         const cols = json.table.cols.filter(c => c.label);
         const headers = cols.map(c => c.label);
         const rows = json.table.rows;
@@ -94,7 +96,7 @@
         thead.innerHTML = '';
         tbody.innerHTML = '';
 
-        // header row
+        // header
         const trHead = document.createElement('tr');
         headers.forEach(h => {
           const th = document.createElement('th');
@@ -103,15 +105,14 @@
         });
         thead.appendChild(trHead);
 
-        // data rows
+        // isi tabel
         rows.forEach(r => {
           const tr = document.createElement('tr');
           cols.forEach((c, i) => {
             const cell = r.c[i];
             let value = cell ? cell.v : '';
-            // cek apakah value berupa tanggal
-            if (value && !isNaN(Date.parse(value))) {
-              value = formatTanggal(value);
+            if (typeof value === "string" && value.startsWith("Date(")) {
+              value = formatTanggalGoogleSheets(value);
             }
             const td = document.createElement('td');
             td.textContent = value;
@@ -125,7 +126,7 @@
     }
 
     loadTable();
-    setInterval(loadTable, 300000); // 5 menit
+    setInterval(loadTable, 300000); // refresh 5 menit
   </script>
 </body>
 </html>
