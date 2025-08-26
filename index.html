@@ -3,31 +3,28 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tabel Peminjaman Inventaris</title>
+  <title>Tabel Peminjaman & Inventaris</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
   <style>
     html, body {
-      height: 100%;
       margin: 0;
       padding: 0;
       font-family: 'Poppins', sans-serif;
       background: transparent;
       color: white;
     }
-
     .table-container {
       width: 100%;
-      height: 100vh;
-      overflow: auto;
+      margin-bottom: 40px;
+      overflow-x: auto;
     }
-
     table {
       border-collapse: collapse;
       width: 100%;
-      min-width: 600px;
+      min-width: 400px;
+      margin-bottom: 30px;
       border: 1px solid white;
     }
-
     thead th {
       background: linear-gradient(135deg, #b8860b, #ffd700);
       color: white;
@@ -35,38 +32,44 @@
       padding: 12px;
       text-align: center;
       border: none;
-      position: static; /* pastikan header tidak sticky */
+      position: static;
       z-index: auto;
     }
-
     tbody td {
       border: 1px solid white;
       padding: 10px;
       text-align: center;
     }
-
     tbody tr:nth-child(even) {
       background-color: rgba(255, 255, 255, 0.05);
     }
-
     tbody tr:hover td {
       background-color: rgba(255, 255, 255, 0.15);
       transition: background 0.3s;
     }
 
-    /* Media Query untuk mobile */
     @media (max-width: 768px) {
-      #tabelPeminjaman th,
-      #tabelPeminjaman td {
-        font-size: 12px !important; /* paksa font lebih kecil */
+      #tabelPeminjaman th, #tabelPeminjaman td,
+      #tabelInventaris th, #tabelInventaris td {
+        font-size: 12px !important;
         padding: 6px !important;
       }
     }
   </style>
 </head>
 <body>
+
   <div class="table-container">
+    <h2>Jadwal Peminjaman</h2>
     <table id="tabelPeminjaman">
+      <thead></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div class="table-container">
+    <h2>Daftar Inventaris & Tempat</h2>
+    <table id="tabelInventaris">
       <thead></thead>
       <tbody></tbody>
     </table>
@@ -94,34 +97,47 @@
       return val;
     }
 
-    async function loadTable() {
+    async function loadTables() {
       try {
         const res = await fetch(url);
         const text = await res.text();
         const json = JSON.parse(text.substr(47).slice(0, -2));
 
-        const cols = json.table.cols.filter(c => c.label);
-        const headers = cols.map(c => c.label);
         const rows = json.table.rows;
+        const allCols = json.table.cols;
 
-        const thead = document.querySelector('#tabelPeminjaman thead');
-        const tbody = document.querySelector('#tabelPeminjaman tbody');
-        thead.innerHTML = '';
-        tbody.innerHTML = '';
+        // Cari index header inventaris & tempat
+        const inventarisColIndex = allCols.findIndex(c => c.label.toLowerCase() === 'inventaris');
+        const tempatColIndex = allCols.findIndex(c => c.label.toLowerCase() === 'tempat');
 
-        // header
-        const trHead = document.createElement('tr');
-        headers.forEach(h => {
+        // ================= Tabel Peminjaman =================
+        const tabelPeminjaman = document.querySelector('#tabelPeminjaman');
+        const theadP = tabelPeminjaman.querySelector('thead');
+        const tbodyP = tabelPeminjaman.querySelector('tbody');
+        theadP.innerHTML = '';
+        tbodyP.innerHTML = '';
+
+        // Ambil baris sebelum header inventaris muncul
+        let peminjamanRows = [];
+        for (let r of rows) {
+          if (r.c[inventarisColIndex] && r.c[inventarisColIndex].v && r.c[inventarisColIndex].v.toLowerCase() === 'inventaris') break;
+          peminjamanRows.push(r);
+        }
+
+        // Header tabel peminjaman
+        const headersP = allCols.map(c => c.label).filter(h => h);
+        const trHeadP = document.createElement('tr');
+        headersP.forEach(h => {
           const th = document.createElement('th');
           th.textContent = h;
-          trHead.appendChild(th);
+          trHeadP.appendChild(th);
         });
-        thead.appendChild(trHead);
+        theadP.appendChild(trHeadP);
 
-        // isi tabel
-        rows.forEach(r => {
+        // Isi tabel peminjaman
+        peminjamanRows.forEach(r => {
           const tr = document.createElement('tr');
-          cols.forEach((c, i) => {
+          headersP.forEach((h, i) => {
             const cell = r.c[i];
             let value = cell ? cell.v : '';
             if (typeof value === "string" && value.startsWith("Date(")) {
@@ -131,15 +147,53 @@
             td.textContent = value;
             tr.appendChild(td);
           });
-          tbody.appendChild(tr);
+          tbodyP.appendChild(tr);
         });
+
+        // ================= Tabel Inventaris =================
+        const tabelInventaris = document.querySelector('#tabelInventaris');
+        const theadI = tabelInventaris.querySelector('thead');
+        const tbodyI = tabelInventaris.querySelector('tbody');
+        theadI.innerHTML = '';
+        tbodyI.innerHTML = '';
+
+        // Header inventaris
+        const trHeadI = document.createElement('tr');
+        ['Inventaris', 'Tempat'].forEach(h => {
+          const th = document.createElement('th');
+          th.textContent = h;
+          trHeadI.appendChild(th);
+        });
+        theadI.appendChild(trHeadI);
+
+        // Ambil baris setelah header inventaris
+        let inventarisStarted = false;
+        for (let r of rows) {
+          if (!inventarisStarted) {
+            if (r.c[inventarisColIndex] && r.c[inventarisColIndex].v && r.c[inventarisColIndex].v.toLowerCase() === 'inventaris') {
+              inventarisStarted = true;
+            }
+            continue;
+          }
+          const tr = document.createElement('tr');
+          const invCell = r.c[inventarisColIndex] ? r.c[inventarisColIndex].v : '';
+          const tempatCell = r.c[tempatColIndex] ? r.c[tempatColIndex].v : '';
+          const tdInv = document.createElement('td');
+          tdInv.textContent = invCell;
+          const tdTempat = document.createElement('td');
+          tdTempat.textContent = tempatCell;
+          tr.appendChild(tdInv);
+          tr.appendChild(tdTempat);
+          tbodyI.appendChild(tr);
+        }
+
       } catch (err) {
         console.error('Error memuat data:', err);
       }
     }
 
-    loadTable();
-    setInterval(loadTable, 300000); // refresh 5 menit
+    loadTables();
+    setInterval(loadTables, 300000); // refresh 5 menit
   </script>
 </body>
 </html>
