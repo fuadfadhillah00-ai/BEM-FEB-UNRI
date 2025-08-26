@@ -7,10 +7,11 @@
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
   <style>
     html, body {
+      height: 100%;
       margin: 0;
       padding: 0;
       font-family: 'Poppins', sans-serif;
-      background-color: #1e1e1e;
+      background: transparent;
       color: white;
     }
 
@@ -43,7 +44,6 @@
       border: 1px solid white;
       padding: 10px;
       text-align: center;
-      color: white;
     }
 
     tbody tr:nth-child(even) {
@@ -73,11 +73,15 @@
   <div class="table-container">
     <table id="tabelPeminjaman">
       <thead></thead>
-      <tbody></tbody>
+      <tbody>
+        <tr>
+          <td colspan="100%">Memuat data...</td>
+        </tr>
+      </tbody>
     </table>
   </div>
 
-  <!-- Tabel Inventaris & Reservasi (statis, langsung di HTML) -->
+  <!-- Tabel Inventaris & Reservasi -->
   <div class="table-container">
     <table id="tabelInventaris">
       <thead>
@@ -104,75 +108,78 @@
     </table>
   </div>
 
-  <!-- Script untuk tabel jadwal peminjaman -->
   <script>
-    const sheetID = '1q2aZfUdFAwrsTBy2ekgH3r0vjp9JCgPKvxMYbvDezdM';
-    const gid = '0';
-    const url = `https://docs.google.com/spreadsheets/d/${sheetID}/gviz/tq?tqx=out:json&gid=${gid}`;
+    (async function(){
+      const sheetID = '1q2aZfUdFAwrsTBy2ekgH3r0vjp9JCgPKvxMYbvDezdM';
+      const gid = '0';
+      const url = `https://docs.google.com/spreadsheets/d/${sheetID}/gviz/tq?tqx=out:json&gid=${gid}`;
 
-    function formatTanggalGoogleSheets(val) {
-      const match = /^Date\((\d+),(\d+),(\d+)\)/.exec(val);
-      if (match) {
-        const year = parseInt(match[1]);
-        const month = parseInt(match[2]);
-        const day = parseInt(match[3]);
-        const d = new Date(year, month, day);
-        return d.toLocaleDateString("id-ID", {
-          weekday: "long",
-          day: "numeric",
-          month: "long",
-          year: "numeric"
-        });
-      }
-      return val;
-    }
-
-    async function loadTable() {
-      try {
-        const res = await fetch(url);
-        const text = await res.text();
-        const json = JSON.parse(text.substr(47).slice(0, -2));
-
-        const cols = json.table.cols.filter(c => c.label);
-        const headers = cols.map(c => c.label);
-        const rows = json.table.rows;
-
-        const thead = document.querySelector('#tabelPeminjaman thead');
-        const tbody = document.querySelector('#tabelPeminjaman tbody');
-        thead.innerHTML = '';
-        tbody.innerHTML = '';
-
-        // header
-        const trHead = document.createElement('tr');
-        headers.forEach(h => {
-          const th = document.createElement('th');
-          th.textContent = h;
-          trHead.appendChild(th);
-        });
-        thead.appendChild(trHead);
-
-        // isi tabel
-        rows.forEach(r => {
-          const tr = document.createElement('tr');
-          cols.forEach((c, i) => {
-            const cell = r.c[i];
-            let value = cell ? cell.v : '';
-            if (typeof value === "string" && value.startsWith("Date(")) {
-              value = formatTanggalGoogleSheets(value);
-            }
-            const td = document.createElement('td');
-            td.textContent = value;
-            tr.appendChild(td);
+      function formatTanggalGoogleSheets(val) {
+        const match = /^Date\((\d+),(\d+),(\d+)\)/.exec(val);
+        if (match) {
+          const year = parseInt(match[1]);
+          const month = parseInt(match[2]);
+          const day = parseInt(match[3]);
+          const d = new Date(year, month, day);
+          return d.toLocaleDateString("id-ID", {
+            weekday: "long",
+            day: "numeric",
+            month: "long",
+            year: "numeric"
           });
-          tbody.appendChild(tr);
-        });
-      } catch (err) {
-        console.error('Error memuat data:', err);
+        }
+        return val;
       }
-    }
 
-    loadTable();
-    setInterval(loadTable, 300000); // refresh 5 menit
+      async function loadTable() {
+        try {
+          const res = await fetch(url);
+          const text = await res.text();
+          const json = JSON.parse(text.substr(47).slice(0, -2));
+
+          const cols = json.table.cols.filter(c => c.label);
+          const headers = cols.map(c => c.label);
+          const rows = json.table.rows;
+
+          const thead = document.querySelector('#tabelPeminjaman thead');
+          const tbody = document.querySelector('#tabelPeminjaman tbody');
+          thead.innerHTML = '';
+          tbody.innerHTML = '';
+
+          // header
+          const trHead = document.createElement('tr');
+          headers.forEach(h => {
+            const th = document.createElement('th');
+            th.textContent = h;
+            trHead.appendChild(th);
+          });
+          thead.appendChild(trHead);
+
+          // isi tabel
+          rows.forEach(r => {
+            const tr = document.createElement('tr');
+            cols.forEach((c, i) => {
+              const cell = r.c[i];
+              let value = cell ? cell.v : '';
+              if (typeof value === "string" && value.startsWith("Date(")) {
+                value = formatTanggalGoogleSheets(value);
+              }
+              const td = document.createElement('td');
+              td.textContent = value;
+              tr.appendChild(td);
+            });
+            tbody.appendChild(tr);
+          });
+        } catch (err) {
+          console.error('Gagal memuat data Google Sheets:', err);
+          const tbody = document.querySelector('#tabelPeminjaman tbody');
+          tbody.innerHTML = '<tr><td colspan="100%">Gagal memuat data.</td></tr>';
+        }
+      }
+
+      loadTable();
+      setInterval(loadTable, 300000); // refresh 5 menit
+    })();
   </script>
 
 </body>
