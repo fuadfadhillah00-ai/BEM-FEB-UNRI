@@ -11,7 +11,7 @@
       margin: 0;
       padding: 0;
       font-family: 'Poppins', sans-serif;
-      background: #121212;
+      background: transparent;
       color: white;
     }
 
@@ -19,7 +19,6 @@
       width: 100%;
       height: 100vh;
       overflow: auto;
-      padding: 20px;
     }
 
     table {
@@ -36,6 +35,8 @@
       padding: 12px;
       text-align: center;
       border: none;
+      position: static;
+      z-index: auto;
     }
 
     tbody td {
@@ -53,14 +54,11 @@
       transition: background 0.3s;
     }
 
-    /* Media Query untuk mobile */
     @media (max-width: 768px) {
-      table {
-        font-size: 12px;
-      }
-
-      th, td {
-        padding: 6px;
+      #tabelPeminjaman th,
+      #tabelPeminjaman td {
+        font-size: 12px !important;
+        padding: 6px !important;
       }
     }
   </style>
@@ -74,12 +72,42 @@
   </div>
 
   <script>
-    const jsonUrl = 'https://script.google.com/macros/s/AKfycbw7c8Au3RRe4qG4AONkFbBjMqZCpifpg_JBVgZCR5qaErn1Qz51Or-P83bf6W0I750/exec';
+    const jsonUrl = 'https://script.google.com/macros/s/AKfycbwoltxLYdJS0zOgq9XD4fpVdAI7NFMMdIbpoBlnTaSow9BRJpB18LFrTZWfQHQ8GHE/exec';
+
+    function parseDateFromText(txt) {
+      if (!txt) return null;
+
+      if (txt.includes("-")) {
+        const parts = txt.split("-");
+        txt = parts[parts.length - 1].trim();
+      }
+
+      txt = txt.replace(/\//g, "-");
+
+      // Format dd-mm-yyyy
+      const isoMatch = txt.match(/(\d{1,2})-(\d{1,2})-(\d{4})/);
+      if (isoMatch) {
+        return new Date(parseInt(isoMatch[3]), parseInt(isoMatch[2])-1, parseInt(isoMatch[1]));
+      }
+
+      // Format "17 September 2025"
+      const months = {
+        januari:0,februari:1,maret:2,april:3,mei:4,juni:5,
+        juli:6,agustus:7,september:8,oktober:9,november:10,desember:11
+      };
+      const m = txt.toLowerCase().match(/(\d{1,2})\s+([a-z]+)\s+(\d{4})/);
+      if (m && months[m[2]] !== undefined) {
+        return new Date(parseInt(m[3]), months[m[2]], parseInt(m[1]));
+      }
+
+      return null;
+    }
 
     async function loadTable() {
       try {
         const res = await fetch(jsonUrl);
         const data = await res.json();
+
         const thead = document.querySelector('#tabelPeminjaman thead');
         const tbody = document.querySelector('#tabelPeminjaman tbody');
         thead.innerHTML = '';
@@ -97,10 +125,12 @@
         thead.appendChild(trHead);
 
         const now = new Date();
+        now.setHours(0,0,0,0);
 
         data.forEach(row => {
-          const parsedDate = row.__parsedDate ? new Date(row.__parsedDate) : null;
-          if (parsedDate && parsedDate > now) return;
+          let parsedDate = null;
+          if (row["Tanggal"]) parsedDate = parseDateFromText(row["Tanggal"]);
+          if (parsedDate && parsedDate < now) return; // sembunyikan row masa lalu
 
           const tr = document.createElement('tr');
           headers.forEach(h => {
@@ -110,13 +140,14 @@
           });
           tbody.appendChild(tr);
         });
+
       } catch (err) {
         console.error('Error memuat data:', err);
       }
     }
 
     loadTable();
-    setInterval(loadTable, 300000);
+    setInterval(loadTable, 300000); // refresh 5 menit
   </script>
 </body>
 </html>
