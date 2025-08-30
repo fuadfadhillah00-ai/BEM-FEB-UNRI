@@ -35,7 +35,7 @@
       padding: 12px;
       text-align: center;
       border: none;
-      position: static; /* pastikan header tidak sticky */
+      position: static;
       z-index: auto;
     }
 
@@ -58,7 +58,7 @@
     @media (max-width: 768px) {
       #tabelPeminjaman th,
       #tabelPeminjaman td {
-        font-size: 12px !important; /* paksa font lebih kecil */
+        font-size: 12px !important;
         padding: 6px !important;
       }
     }
@@ -73,43 +73,22 @@
   </div>
 
   <script>
-    const sheetID = '1q2aZfUdFAwrsTBy2ekgH3r0vjp9JCgPKvxMYbvDezdM';
-    const gid = '0';
-    const url = `https://docs.google.com/spreadsheets/d/${sheetID}/gviz/tq?tqx=out:json&gid=${gid}`;
-
-    function formatTanggalGoogleSheets(val) {
-      const match = /^Date\((\d+),(\d+),(\d+)\)/.exec(val);
-      if (match) {
-        const year = parseInt(match[1]);
-        const month = parseInt(match[2]);
-        const day = parseInt(match[3]);
-        const d = new Date(year, month, day);
-        return d.toLocaleDateString("id-ID", {
-          weekday: "long",
-          day: "numeric",
-          month: "long",
-          year: "numeric"
-        });
-      }
-      return val;
-    }
+    const jsonUrl = 'https://script.google.com/macros/s/AKfycbz1TCKQVNPzcJWcxBrTh5TLFasXrFTDWtX_ltn_lBDyKA3x4n5eutVzm73z316HdUQ/exec';
 
     async function loadTable() {
       try {
-        const res = await fetch(url);
-        const text = await res.text();
-        const json = JSON.parse(text.substr(47).slice(0, -2));
-
-        const cols = json.table.cols.filter(c => c.label);
-        const headers = cols.map(c => c.label);
-        const rows = json.table.rows;
+        const res = await fetch(jsonUrl);
+        const data = await res.json(); // ambil JSON langsung dari Apps Script
 
         const thead = document.querySelector('#tabelPeminjaman thead');
         const tbody = document.querySelector('#tabelPeminjaman tbody');
         thead.innerHTML = '';
         tbody.innerHTML = '';
 
-        // header
+        if (data.length === 0) return;
+
+        // buat header dari key JSON
+        const headers = Object.keys(data[0]);
         const trHead = document.createElement('tr');
         headers.forEach(h => {
           const th = document.createElement('th');
@@ -119,16 +98,11 @@
         thead.appendChild(trHead);
 
         // isi tabel
-        rows.forEach(r => {
+        data.forEach(row => {
           const tr = document.createElement('tr');
-          cols.forEach((c, i) => {
-            const cell = r.c[i];
-            let value = cell ? cell.v : '';
-            if (typeof value === "string" && value.startsWith("Date(")) {
-              value = formatTanggalGoogleSheets(value);
-            }
+          headers.forEach(h => {
             const td = document.createElement('td');
-            td.textContent = value;
+            td.textContent = row[h] !== null && row[h] !== undefined ? row[h] : '';
             tr.appendChild(td);
           });
           tbody.appendChild(tr);
@@ -139,7 +113,7 @@
     }
 
     loadTable();
-    setInterval(loadTable, 300000); // refresh 5 menit
+    setInterval(loadTable, 300000); // refresh tiap 5 menit
   </script>
 </body>
 </html>
