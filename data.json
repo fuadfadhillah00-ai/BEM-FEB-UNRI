@@ -1,10 +1,1 @@
-<HTML>
-<HEAD>
-<TITLE>Moved Temporarily</TITLE>
-</HEAD>
-<BODY BGCOLOR="#FFFFFF" TEXT="#000000">
-<!-- GSE Default Error -->
-<H1>Moved Temporarily</H1>
-The document has moved <A HREF="https://script.googleusercontent.com/macros/echo?user_content_key=AUkAhnR-OfWWB_KhHBv_ik4EFlyvflw_aeDnzmDrCoxk-fs4AUM8earE85QDvibgKrt70RwWSW_KBTNeY6TFUdtFczSEt35NeL0zyPol5yPlslLYJBxVTJ4WIrOpdj4mIsacGtjWtGVnnAwy-FPtcJIhwYa0YoJBPdcjCILMOdYS2UJd1ClB139FL3D-zSBBAWvSlTDOGJeA5BakacBvwUbDJZHIpd-kjxzkvjXITHVS8q6Y9lZoYSZZ6oDJJCS-s36WnHRUd6pTPhGi6GIYiu4&amp;lib=Mztlfl-3356a-zshmNK48i2Yixif86rDg">here</A>.
-</BODY>
-</HTML>
+<!DOCTYPE html><html><head><link rel="shortcut icon" href="//ssl.gstatic.com/docs/script/images/favicon.ico"><title>Error</title><style type="text/css" nonce="Sm5qvrG2iC9PVmPk5FSz5w">body {background-color: #fff; margin: 0; padding: 0;}.errorMessage {font-family: Arial,sans-serif; font-size: 12pt; font-weight: bold; line-height: 150%; padding-top: 25px;}</style></head><body style="margin:20px"><div><img alt="Google Apps Script" src="//ssl.gstatic.com/docs/script/images/logo.png"></div><div style="text-align:center;font-family:monospace;margin:50px auto 0;max-width:600px">The JavaScript runtime exited unexpectedly.</div></body></html>
